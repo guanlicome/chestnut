@@ -1,5 +1,6 @@
 package org.fulin.chestnut;
 
+import com.google.common.io.Files;
 import net.openhft.chronicle.map.ChronicleMap;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -38,7 +39,8 @@ public class ListMapService {
                           long largeEntriesSize, int largeValueLength) throws IOException {
         this.smallThreshold = smallValueLength;
         this.medianThreshold = medianValueLength;
-        
+
+        Files.createParentDirs(new File(DATA_PATH + "/dir"));
         logger.info("chronicle map put data in dir: {}", DATA_PATH);
 
         smallListMap = ChronicleMap

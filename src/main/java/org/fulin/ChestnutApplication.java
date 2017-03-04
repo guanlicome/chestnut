@@ -20,6 +20,7 @@ public class ChestnutApplication {
 
     public static void main(String[] args) throws IOException {
         Files.createParentDirs(new File(DATA_PATH + "/dir"));
+        
         Slf4jReporter.forRegistry(metricRegistry)
                 .convertDurationsTo(TimeUnit.MILLISECONDS)
                 .build();

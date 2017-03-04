@@ -2,6 +2,7 @@ package org.fulin.chestnut;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
+import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,8 @@ public class BloomFilterService {
     private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
     public BloomFilterService(int size) throws IOException {
+        Files.createParentDirs(new File(DATA_PATH + "/dir"));
+
         String filename = DATA_PATH + "/" + backupFileName;
         File f = new File(filename);
         if (f.exists()) {
