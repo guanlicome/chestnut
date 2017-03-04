@@ -93,22 +93,20 @@ public class ChestnutApplicationTests {
                 "cost time: " + cost);
     }
 
-    //@Test
-    public void loadLikeData() {
-        long begin = System.currentTimeMillis();
-        for (long uid = 20001; uid < 20010; uid++) {
-            for (long oid = 10001; oid < 10020; oid++) {
-                restTemplate.getForObject("/pcc?action=like&uid=" + uid + "&oid=" + oid, String.class);
-            }
-        }
-        long cost = System.currentTimeMillis() - begin;
-        System.out.println("cost time: " + cost);
-
+    @Test
+    public void testLoadData() {
+        String home = System.getProperty("user.dir");
         String ret;
-        long uid = 20002;
-        long oid = 10003;
-        ret = restTemplate.getForObject("/pcc?action=is_like&uid=" + uid + "&oid=" + oid, String.class);
-        System.out.println("is_like: " + ret);
+
+        //ret = restTemplate.getForObject("/pcc/load?type=user&file_path=" + home + "/src/test/resources/user.csv", String.class);
+        //System.out.println("load user: " + ret);
+
+        //ret = restTemplate.getForObject("/pcc/load?type=friends&file_path=" + home + "/src/test/resources/friends.csv", String.class);
+        //System.out.println("load friends: " + ret);
+
+        ret = restTemplate.getForObject("/pcc/load?type=like&file_path=" + home + "/src/test/resources/like.csv", String.class);
+        System.out.println("load like: " + ret);
+        
     }
 
 }

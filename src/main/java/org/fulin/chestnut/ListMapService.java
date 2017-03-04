@@ -42,7 +42,11 @@ public class ListMapService {
         this.medianThreshold = medianValueLength;
 
         Files.createParentDirs(new File(DATA_PATH + "/dir"));
-        logger.info("chronicle map put data in dir: {}", DATA_PATH);
+
+        logger.info("chronicle map {} put data in dir: {}", listName, DATA_PATH);
+        logger.info("chronicle map {} with config: small {}/{}, media {}/{}, large {}/{}",
+                listName, smallEntriesSize, smallValueLength,
+                mediaEntriesSize, medianValueLength, largeEntriesSize, largeEntriesSize);
 
         smallListMap = ChronicleMap
                 .of(Long.class, long[].class)
@@ -78,12 +82,17 @@ public class ListMapService {
         largeListMap.close();
         countMap.close();
     }
-    
+
     // TODO add lock
     // assume all positive numbers
     // TODO add to tail or add to head ? do we need reverse ?
     public boolean add(long key, long value) {
-        return addToTail(key, value);
+        try {
+            return addToTail(key, value);
+        } catch (Exception e) {
+            logger.error("error when add {}:{} list:{}", key, value, listName);
+            throw e;
+        }
     }
 
     public boolean addToTail(long key, long value) {
@@ -110,7 +119,7 @@ public class ListMapService {
             v[len] = value;
             medianListMap.put(key, v);
             metricRegistry.counter("listMap.median.put").inc();
-        } else if (len > medianThreshold && v[len] <= 0) {
+        } else if (len > medianThreshold && len < v.length && v[len] <= 0) {
             v[len] = value;
             largeListMap.put(key, v);
             metricRegistry.counter("listMap.large.put").inc();
@@ -170,6 +179,22 @@ public class ListMapService {
 
     private void setCount(long key, long value) {
         countMap.put(key, value);
+
+        if (value > 100000) {
+            metricRegistry.counter(listName + ".count.>100k").inc();
+        } else if (value > 10000) {
+            metricRegistry.counter(listName + ".count.>10k").inc();
+        } else if (value > 1000) {
+            metricRegistry.counter(listName + ".count.>1000").inc();
+        } else if (value > 100) {
+            metricRegistry.counter(listName + ".count.>100").inc();
+        } else if (value > 80) {
+            metricRegistry.counter(listName + ".count.>80").inc();
+        } else if (value > 40) {
+            metricRegistry.counter(listName + ".count.>40").inc();
+        } else if (value > 20) {
+            metricRegistry.counter(listName + ".count.>20").inc();
+        }
     }
 
     // pool performance, need a bloom filter before this

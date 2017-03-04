@@ -8,11 +8,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 import static org.fulin.ChestnutApplication.metricRegistry;
-import static org.fulin.chestnut.Response.*;
+import static org.fulin.chestnut.Response.CLIENT_ERROR_RESPONSE;
+import static org.fulin.chestnut.Response.SERVER_ERROR_RESPONSE;
 
 /**
  * chestnut
@@ -152,6 +157,75 @@ public class PccController {
         List<User> friends = pccService.getUsers(pccService.getFriend(uid));
 
         return Response.of("add_user", uid, 0, friends);
+    }
+
+    @RequestMapping(path = "/pcc/load")
+    public Response<Long> loadData(@RequestParam(value = "file_path") String filePath,
+                                   @RequestParam(value = "type") String type) {
+        long start = System.currentTimeMillis();
+
+        final AtomicLong lineNo = new AtomicLong();
+        boolean succ = true;
+
+        try (Stream<String> stream = Files.lines(Paths.get(filePath))) {
+            stream.forEach((line) -> {
+                if (lineNo.incrementAndGet() % 10000 == 0) {
+                    logger.info("load data for file {}, type {}, lineNo {}",
+                            filePath, type, lineNo.get());
+                }
+
+                if (type.equalsIgnoreCase("user")) {
+                    int p = line.indexOf(',');
+                    if (p < 0) {
+                        logger.warn("{} line has no , {}", type, line);
+                        return;
+                    }
+                    long uid = Long.parseLong(line.substring(0, p));
+                    String nickname = line.substring(p + 1);
+                    pccService.addUser(uid, nickname);
+                } else if (type.equalsIgnoreCase("friends")) {
+                    int p = line.indexOf(',');
+                    if (p < 0) {
+                        logger.warn("{} line has no , {}", type, line);
+                        return;
+                    }
+                    long uid = Long.parseLong(line.substring(0, p));
+                    long friendUid = Long.parseLong(line.substring(p + 1));
+
+                    pccService.addFriend(uid, friendUid);
+                } else if (type.equalsIgnoreCase("like")) {
+                    int p = line.indexOf(':');
+                    if (p < 0) {
+                        logger.warn("{} line has no : {}", type, line);
+                        return;
+                    }
+                    long oid = Long.parseLong(line.substring(0, p));
+                    String uids = line.substring(p + 1);
+                    String[] parts = uids.split(",");
+                    for (String part : parts) {
+                        if (part.contains("[")) {
+                            part = part.replace("[", "");
+                        }
+                        if (part.contains("]")) {
+                            part = part.replace("]", "");
+                        }
+                        if (part.trim().length() <= 0) {
+                            continue;
+                        }
+                        long uid = Long.parseLong(part);
+                        pccService.like(uid, oid);
+                    }
+                } else {
+                    throw new IllegalArgumentException("type error");
+                }
+            });
+        } catch (Exception e) {
+            logger.error("load data error for file {}, type {}", filePath, type, e);
+            succ = false;
+        }
+
+        long cost = System.currentTimeMillis() - start;
+        return Response.of("load", succ ? 0 : -1, 0, cost);
     }
 
 }
