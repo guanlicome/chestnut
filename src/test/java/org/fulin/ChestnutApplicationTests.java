@@ -30,9 +30,17 @@ public class ChestnutApplicationTests {
     @Test
     public void testLike() {
         String ret = restTemplate.getForObject("/pcc?action=like&uid=20001&oid=10001", String.class);
-        System.out.println("ret: " + ret);
+        ret = restTemplate.getForObject("/pcc?action=like&uid=20002&oid=10001", String.class);
+        ret = restTemplate.getForObject("/pcc?action=like&uid=20003&oid=10001", String.class);
+        System.out.println("like: " + ret);
         ret = restTemplate.getForObject("/pcc?action=is_like&uid=20001&oid=10001", String.class);
-        System.out.println("is_like: " + ret);
+        System.out.println("is_like(1): " + ret);
+        ret = restTemplate.getForObject("/pcc?action=is_like&uid=21001&oid=10001", String.class);
+        System.out.println("is_like(0): " + ret);
+        ret = restTemplate.getForObject("/pcc?action=count&oid=10001", String.class);
+        System.out.println("count(3): " + ret);
+        ret = restTemplate.getForObject("/pcc?action=list&oid=10001&page_size=10", String.class);
+        System.out.println("list: " + ret);
     }
 
     @Test
