@@ -1,6 +1,6 @@
 package org.fulin;
 
-import org.fulin.chestnut.ListMapService;
+import org.fulin.chestnut.PccService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +20,7 @@ public class ChestnutApplicationTests {
 
     @Before
     public void cleanOldData() throws IOException {
-        ListMapService.cleanData();
+        PccService.prepareForTest();
     }
 
     @Test

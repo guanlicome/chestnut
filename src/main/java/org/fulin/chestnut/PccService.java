@@ -2,15 +2,21 @@ package org.fulin.chestnut;
 
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
+import net.openhft.chronicle.map.ChronicleMap;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
+import static org.fulin.ChestnutApplication.DATA_PATH;
 import static org.fulin.ChestnutApplication.metricRegistry;
 
 /**
@@ -24,6 +30,12 @@ public class PccService {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
 
+    public static int TOTAL_USER_CNT = 100_000_000;
+    public static int AVG_FRIENDS_CNT = 100;
+    public static int TOTAL_OBJECT_CNT = 100_000_000;
+    public static int AVG_OBJECT_LIKED_CNT = 20;
+    public static int AVG_USER_LIKE_CNT = 20;
+
     // key: uid, value: friend uid list
     private ListMapService friendListMap;
 
@@ -33,15 +45,36 @@ public class PccService {
     // key: oid, value: uid list who liked this
     private ListMapService objectLikedListMap;
 
+    // key: uid, value: nickname
+    private ChronicleMap<Long, String> nicknames;
+
     private BloomFilterService bloomFilterService;
 
 
     @PostConstruct
     public void init() throws IOException {
         try {
-            friendListMap = new ListMapService("friendList", 9000000, 10, 900000, 40, 100000, 100);
-            userLikeListMap = new ListMapService("userLikeList", 9000000, 10, 900000, 40, 100000, 100);
-            objectLikedListMap = new ListMapService("objectLikedList", 9000000, 10, 900000, 40, 100000, 100);
+            friendListMap = new ListMapService("friendList",
+                    (int) (TOTAL_USER_CNT * 0.9), (int) (AVG_FRIENDS_CNT * 0.2),
+                    (int) (TOTAL_USER_CNT * 0.09), AVG_FRIENDS_CNT,
+                    (int) (TOTAL_USER_CNT * 0.02), AVG_FRIENDS_CNT * 2);
+
+            userLikeListMap = new ListMapService("userLikeList",
+                    (int) (TOTAL_USER_CNT * 0.9), (int) (AVG_USER_LIKE_CNT * 0.5),
+                    (int) (TOTAL_USER_CNT * 0.09), AVG_USER_LIKE_CNT,
+                    (int) (TOTAL_USER_CNT * 0.02), AVG_USER_LIKE_CNT * 2);
+
+            objectLikedListMap = new ListMapService("objectLikedList",
+                    (int) (TOTAL_OBJECT_CNT * 0.9), (int) (AVG_OBJECT_LIKED_CNT * 0.5),
+                    (int) (TOTAL_OBJECT_CNT * 0.09), AVG_OBJECT_LIKED_CNT,
+                    (int) (TOTAL_OBJECT_CNT * 0.02), AVG_OBJECT_LIKED_CNT * 2);
+
+            nicknames = ChronicleMap
+                    .of(Long.class, String.class)
+                    .name("nickname")
+                    .entries(TOTAL_USER_CNT)
+                    .averageValue("TangFulin")
+                    .createPersistedTo(new File(DATA_PATH + "/nickname"));
 
             // last 7 days
             bloomFilterService = new BloomFilterService(7 * 10000000);
@@ -51,15 +84,57 @@ public class PccService {
         }
     }
 
+    @PreDestroy
+    public void close() {
+        friendListMap.close();
+        userLikeListMap.close();
+        objectLikedListMap.close();
+        nicknames.close();
+        bloomFilterService.close();
+        System.out.println("Succ closed all maps");
+    }
+
+    public static void prepareForTest() throws IOException {
+        File f = new File(DATA_PATH);
+        FileUtils.deleteDirectory(f);
+        TOTAL_USER_CNT = TOTAL_USER_CNT / 1000;
+        TOTAL_OBJECT_CNT = TOTAL_OBJECT_CNT / 1000;
+    }
+
+    public User addUser(long uid, String nickname) {
+        metricRegistry.counter("addUser").inc();
+        nicknames.put(uid, nickname);
+        return new User(uid, nickname);
+    }
+
+    public List<User> getUsers(long[] uids) {
+        metricRegistry.meter("getUserNames").mark(uids.length);
+
+        ArrayList<User> users = new ArrayList<>();
+        for (long uid : uids) {
+            String nick = nicknames.get(uid);
+            if (nick == null) {
+                nick = "";
+            }
+            users.add(new User(uid, nick));
+        }
+        return users;
+    }
+
     public boolean addFriend(long uid, long friendUid) {
         metricRegistry.counter("addFriend").inc();
         return friendListMap.add(uid, friendUid);
     }
 
+    public long[] getFriend(long uid) {
+        metricRegistry.counter("getFriend").inc();
+        return friendListMap.getList(uid);
+    }
+
     // return the oid 's liked uid list
     public long[] like(long uid, long oid) {
         metricRegistry.counter("like").inc();
-        
+
         userLikeListMap.add(uid, oid);
         objectLikedListMap.add(oid, uid);
         bloomFilterService.add(uid, oid);

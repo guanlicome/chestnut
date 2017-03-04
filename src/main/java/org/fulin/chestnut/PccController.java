@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Random;
 
 import static org.fulin.ChestnutApplication.metricRegistry;
@@ -28,7 +29,7 @@ public class PccController {
     @Autowired
     PccService pccService;
 
-    String[] actions = new String[] {"like", "is_like", "count", "list"};
+    String[] actions = new String[]{"like", "is_like", "count", "list"};
     Random random = new Random(System.currentTimeMillis());
 
     @RequestMapping(path = "/pcc")
@@ -90,13 +91,13 @@ public class PccController {
     // return error for uid already like oid
     @Timed
     @RequestMapping(path = "/pcc/like")
-    public Response<long[]> like(long uid, long oid) {
+    public Response<List<User>> like(long uid, long oid) {
         if (pccService.isLike(uid, oid)) {
             metricRegistry.counter("error.already_like").inc();
 
             return ALREADY_LIKE_ERROR_RESPONSE;
         }
-        return Response.of("like", uid, oid, pccService.like(uid, oid));
+        return Response.of("like", uid, oid, pccService.getUsers(pccService.like(uid, oid)));
     }
 
     // 1 for like, 0 for not
@@ -115,14 +116,33 @@ public class PccController {
 
     @RequestMapping(path = "/pcc/list")
     @Timed
-    public Response<long[]> list(long oid, int pageSize) {
-        return Response.of("list", 0, oid, pccService.list(oid, pageSize));
+    public Response<List<User>> list(long oid, int pageSize) {
+        return Response.of("list", 0, oid,
+                pccService.getUsers(pccService.list(oid, pageSize)));
     }
 
     @RequestMapping(path = "/pcc/list_friend")
     @Timed
-    public Response<long[]> listFriend(long oid, int pageSize, long uid) {
-        return Response.of("list_friend", uid, oid, pccService.listFriend(oid, pageSize, uid));
+    public Response<List<User>> listFriend(long oid, int pageSize, long uid) {
+        return Response.of("list_friend", uid, oid,
+                pccService.getUsers(pccService.listFriend(oid, pageSize, uid)));
     }
-    
+
+    @Timed
+    @RequestMapping(path = "/pcc/add_user")
+    public Response<User> addUser(@RequestParam(value = "uid") long uid,
+                                  @RequestParam(value = "nickname") String nickname) {
+        return Response.of("add_user", uid, 0, pccService.addUser(uid, nickname));
+    }
+
+    @Timed
+    @RequestMapping(path = "/pcc/add_friend")
+    public Response<List<User>> addFriend(@RequestParam(value = "uid") long uid,
+                                          @RequestParam(value = "friend_uid") long friendUid) {
+        pccService.addFriend(uid, friendUid);
+        List<User> friends = pccService.getUsers(pccService.getFriend(uid));
+
+        return Response.of("add_user", uid, 0, friends);
+    }
+
 }

@@ -2,14 +2,12 @@ package org.fulin.chestnut;
 
 import com.google.common.io.Files;
 import net.openhft.chronicle.map.ChronicleMap;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
 
 import static org.fulin.ChestnutApplication.DATA_PATH;
 import static org.fulin.ChestnutApplication.metricRegistry;
@@ -24,11 +22,11 @@ public class ListMapService {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
 
-    private Map<Long, long[]> smallListMap;
-    private Map<Long, long[]> medianListMap;
-    private Map<Long, long[]> largeListMap;
+    private ChronicleMap<Long, long[]> smallListMap;
+    private ChronicleMap<Long, long[]> medianListMap;
+    private ChronicleMap<Long, long[]> largeListMap;
 
-    private Map<Long, Long> countMap;
+    private ChronicleMap<Long, Long> countMap;
 
     private int smallThreshold = 10;
     private int medianThreshold = 100;
@@ -71,12 +69,13 @@ public class ListMapService {
                 .createPersistedTo(new File(DATA_PATH + "/count-" + listName));
     }
 
-    // only for test to clean old data
-    public static void cleanData() throws IOException {
-        File f = new File(DATA_PATH);
-        FileUtils.deleteDirectory(f);
+    public void close() {
+        smallListMap.close();
+        medianListMap.close();
+        largeListMap.close();
+        countMap.close();
     }
-
+    
     // TODO add lock
     // assume all positive numbers
     // TODO add to tail or add to head ? do we need reverse ?

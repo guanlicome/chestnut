@@ -1,5 +1,7 @@
 package org.fulin.chestnut;
 
+import java.util.List;
+
 /**
  * chestnut
  *
@@ -10,7 +12,7 @@ public class Response<T> {
 
     public static final Response<String> CLIENT_ERROR_RESPONSE = new Response<>(400, "Bad Request");
     public static final Response<String> SERVER_ERROR_RESPONSE = new Response<>(500, "Server Internal Error");
-    public static final Response<long[]> ALREADY_LIKE_ERROR_RESPONSE = new Response<>(499, "User Already Liked this Object");
+    public static final Response<List<User>> ALREADY_LIKE_ERROR_RESPONSE = new Response<>(499, "User Already Liked this Object");
     public int retCode;
     public String message;
     public String action;

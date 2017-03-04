@@ -31,13 +31,14 @@ public class BloomFilterService {
     private String backupFileName = "bloomFilter.data";
     private AtomicLong updateCount = new AtomicLong(0);
     private long lastCount = 0;
+    File f;
     private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
     public BloomFilterService(int size) throws IOException {
         Files.createParentDirs(new File(DATA_PATH + "/dir"));
 
         String filename = DATA_PATH + "/" + backupFileName;
-        File f = new File(filename);
+        f = new File(filename);
         if (f.exists()) {
             bloomFilter = BloomFilter.readFrom(new FileInputStream(f), Funnels.unencodedCharsFunnel());
         } else {
@@ -55,6 +56,14 @@ public class BloomFilterService {
                 }
             }
         }, 60, TimeUnit.SECONDS);
+    }
+
+    public void close() {
+        try {
+            bloomFilter.writeTo(new FileOutputStream(f));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean add(long key, long value) {
