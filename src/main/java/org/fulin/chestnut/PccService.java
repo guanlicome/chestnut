@@ -13,6 +13,7 @@ import javax.annotation.PreDestroy;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -110,6 +111,10 @@ public class PccService {
     }
 
     public List<User> getUsers(long[] uids) {
+        if (uids == null || uids.length <= 0) {
+            return Collections.emptyList();
+        }
+        
         metricRegistry.meter("getUserNames").mark(uids.length);
 
         ArrayList<User> users = new ArrayList<>();
