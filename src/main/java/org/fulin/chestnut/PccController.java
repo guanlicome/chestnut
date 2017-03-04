@@ -200,9 +200,12 @@ public class PccController {
                         return;
                     }
                     long oid = Long.parseLong(line.substring(0, p));
-                    String uids = line.substring(p + 1);
-                    String[] parts = uids.split(",");
-                    for (String part : parts) {
+                    String uidStr = line.substring(p + 1);
+                    String[] parts = uidStr.split(",");
+                    long[] uids = new long[parts.length];
+
+                    for (int i = 0; i < parts.length; ++i) {
+                        String part = parts[i];
                         if (part.contains("[")) {
                             part = part.replace("[", "");
                         }
@@ -213,8 +216,11 @@ public class PccController {
                             continue;
                         }
                         long uid = Long.parseLong(part);
-                        pccService.like(uid, oid);
+                        uids[i] = uid;
                     }
+
+                    pccService.addMultiLike(uids, oid);
+
                 } else {
                     throw new IllegalArgumentException("type error");
                 }

@@ -98,11 +98,11 @@ public class ChestnutApplicationTests {
         String home = System.getProperty("user.dir");
         String ret;
 
-        //ret = restTemplate.getForObject("/pcc/load?type=user&file_path=" + home + "/src/test/resources/user.csv", String.class);
-        //System.out.println("load user: " + ret);
+        ret = restTemplate.getForObject("/pcc/load?type=user&file_path=" + home + "/src/test/resources/user.csv", String.class);
+        System.out.println("load user: " + ret);
 
-        //ret = restTemplate.getForObject("/pcc/load?type=friends&file_path=" + home + "/src/test/resources/friends.csv", String.class);
-        //System.out.println("load friends: " + ret);
+        ret = restTemplate.getForObject("/pcc/load?type=friends&file_path=" + home + "/src/test/resources/friends.csv", String.class);
+        System.out.println("load friends: " + ret);
 
         ret = restTemplate.getForObject("/pcc/load?type=like&file_path=" + home + "/src/test/resources/like.csv", String.class);
         System.out.println("load like: " + ret);

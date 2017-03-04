@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.fulin.ChestnutApplication.DATA_PATH;
+import static org.fulin.ChestnutApplication.DEFAULT_LIST_LEN;
 import static org.fulin.ChestnutApplication.metricRegistry;
 
 /**
@@ -114,7 +115,7 @@ public class PccService {
         if (uids == null || uids.length <= 0) {
             return Collections.emptyList();
         }
-        
+
         metricRegistry.meter("getUserNames").mark(uids.length);
 
         ArrayList<User> users = new ArrayList<>();
@@ -147,7 +148,21 @@ public class PccService {
         objectLikedListMap.add(oid, uid);
         bloomFilterService.add(uid, oid);
 
-        return objectLikedListMap.getList(oid);
+        return objectLikedListMap.getList(oid, DEFAULT_LIST_LEN);
+    }
+
+    public long[] addMultiLike(long[] uids, long oid) {
+        metricRegistry.counter("multiLike").inc();
+
+        //userLikeListMap.add(uid, oid);
+
+        objectLikedListMap.add(oid, uids);
+
+        for (long uid : uids) {
+            bloomFilterService.add(uid, oid);
+        }
+
+        return objectLikedListMap.getList(oid, DEFAULT_LIST_LEN);
     }
 
     // 1 for like, 0 for not

@@ -16,6 +16,8 @@ public class ChestnutApplication {
     // change to /dev/shm for performance
     public static String DATA_PATH = System.getProperty("pcc.data.dir", System.getProperty("java.io.tmpdir") + "/pcc");
 
+    public static final int DEFAULT_LIST_LEN = 20;
+
     public static MetricRegistry metricRegistry = new MetricRegistry();
 
     public static void main(String[] args) throws IOException {

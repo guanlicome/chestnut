@@ -69,8 +69,8 @@ public class BloomFilterService {
     public boolean add(long key, long value) {
         if (key <= 0 || value <= 0) {
             // or throw exception?
-            //return false;
-            throw new IllegalArgumentException("key and value must be positive");
+            return false;
+            //throw new IllegalArgumentException("key and value must be positive");
         }
 
         updateCount.incrementAndGet();

@@ -83,6 +83,30 @@ public class ListMapService {
         countMap.close();
     }
 
+    public boolean add(long key, long[] values) {
+        if (key <= 0 || values.length <= 0) {
+            // or throw exception?
+            return false;
+            //throw new IllegalArgumentException("key and value must be positive");
+        }
+
+        int len = getCount(key);
+
+        if (len > 0 || values.length < medianThreshold) {
+            for (long v : values) {
+                add(key, v);
+            }
+            return true;
+        }
+
+        largeListMap.put(key, values);
+        metricRegistry.counter("listMap.large.addMulti").inc();
+        logger.info("addMulti to large for key {}, size: {}", key, values.length);
+        setCount(key, values.length);
+
+        return true;
+    }
+
     // TODO add lock
     // assume all positive numbers
     // TODO add to tail or add to head ? do we need reverse ?
@@ -98,8 +122,8 @@ public class ListMapService {
     public boolean addToTail(long key, long value) {
         if (key <= 0 || value <= 0) {
             // or throw exception?
-            //return false;
-            throw new IllegalArgumentException("key and value must be positive");
+            return false;
+            //throw new IllegalArgumentException("key and value must be positive");
         }
 
         int len = getCount(key);
