@@ -12,6 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
@@ -159,6 +161,8 @@ public class PccController {
         return Response.of("add_user", uid, 0, friends);
     }
 
+    ExecutorService executorService = Executors.newFixedThreadPool(100);
+
     @RequestMapping(path = "/pcc/load")
     public Response<Long> loadData(@RequestParam(value = "file_path") String filePath,
                                    @RequestParam(value = "type") String type) {
@@ -219,7 +223,9 @@ public class PccController {
                         uids[i] = uid;
                     }
 
-                    pccService.addMultiLike(uids, oid);
+                    executorService.submit(() -> {
+                        pccService.addMultiLike(uids, oid);
+                    });
 
                 } else {
                     throw new IllegalArgumentException("type error");
