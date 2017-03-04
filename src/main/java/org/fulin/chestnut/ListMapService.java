@@ -1,6 +1,5 @@
 package org.fulin.chestnut;
 
-import com.google.common.io.Files;
 import net.openhft.chronicle.map.ChronicleMap;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -11,6 +10,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 
+import static org.fulin.ChestnutApplication.DATA_PATH;
+import static org.fulin.ChestnutApplication.metricRegistry;
+
 /**
  * chestnut
  *
@@ -20,9 +22,6 @@ import java.util.Map;
 public class ListMapService {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
-
-    // change to /dev/shm for performance
-    private static final String DATA_PATH = System.getProperty("java.io.tmpdir") + "/pcc";
 
     private Map<Long, long[]> smallListMap;
     private Map<Long, long[]> medianListMap;
@@ -39,8 +38,7 @@ public class ListMapService {
                           long largeEntriesSize, int largeValueLength) throws IOException {
         this.smallThreshold = smallValueLength;
         this.medianThreshold = medianValueLength;
-
-        Files.createParentDirs(new File(DATA_PATH + "/dir"));
+        
         logger.info("chronicle map put data in dir: {}", DATA_PATH);
 
         smallListMap = ChronicleMap
@@ -99,15 +97,19 @@ public class ListMapService {
             v = new long[smallThreshold];
             v[0] = value;
             smallListMap.put(key, v);
+            metricRegistry.counter("listMap.small.new").inc();
         } else if (len < smallThreshold && v[len] <= 0) {
             v[len] = value;
             smallListMap.put(key, v);
+            metricRegistry.counter("listMap.small.put").inc();
         } else if (len > smallThreshold && len < medianThreshold && v[len] <= 0) {
             v[len] = value;
             medianListMap.put(key, v);
+            metricRegistry.counter("listMap.median.put").inc();
         } else if (len > medianThreshold && v[len] <= 0) {
             v[len] = value;
             largeListMap.put(key, v);
+            metricRegistry.counter("listMap.large.put").inc();
         } else if (len == smallThreshold && v[len - 1] > 0) {
             long[] v2 = new long[medianThreshold];
             System.arraycopy(v, 0, v2, 0, smallThreshold);
@@ -115,6 +117,7 @@ public class ListMapService {
             v[smallThreshold] = value;
             medianListMap.put(key, v);
             smallListMap.remove(key);
+            metricRegistry.counter("listMap.small.promote").inc();
             logger.info("promote from small to median for key {}", key);
         } else if (len == medianThreshold && v[len - 1] > 0) {
             long[] v2 = new long[medianThreshold * 2];
@@ -123,6 +126,7 @@ public class ListMapService {
             v[medianThreshold] = value;
             largeListMap.put(key, v);
             medianListMap.remove(key);
+            metricRegistry.counter("listMap.median.promote").inc();
             logger.info("promote from median to large for key {}", key);
         } else if (len > medianThreshold && v[v.length - 1] > 0) {
             int p = v.length;
@@ -131,10 +135,12 @@ public class ListMapService {
             v = v2;
             v[p] = value;
             largeListMap.put(key, v);
+            metricRegistry.counter("listMap.large.promote").inc();
             logger.info("promote from large to large*2 for key {}, size: {}", key, p * 2);
         } else {
             // wtf?
             // TODO log more info
+            metricRegistry.counter("listMap.unknown").inc();
             logger.error("unknown state for key: {}, value len {}, value: {}",
                     key, len, Arrays.asList(v));
             throw new IllegalStateException("unknown state");
@@ -149,8 +155,10 @@ public class ListMapService {
     public int getCount(long key) {
         Long v = countMap.get(key);
         if (v == null) {
+            metricRegistry.counter("listMap.getCount.null").inc();
             return 0;
         }
+        metricRegistry.counter("listMap.getCount").inc();
         return v.intValue();
     }
 

@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
 
+import static org.fulin.ChestnutApplication.metricRegistry;
+
 /**
  * chestnut
  *
@@ -50,11 +52,14 @@ public class PccService {
     }
 
     public boolean addFriend(long uid, long friendUid) {
+        metricRegistry.counter("addFriend").inc();
         return friendListMap.add(uid, friendUid);
     }
 
     // return the oid 's liked uid list
     public long[] like(long uid, long oid) {
+        metricRegistry.counter("like").inc();
+        
         userLikeListMap.add(uid, oid);
         objectLikedListMap.add(oid, uid);
         bloomFilterService.add(uid, oid);
@@ -65,20 +70,31 @@ public class PccService {
     // 1 for like, 0 for not
     public boolean isLike(long uid, long oid) {
         if (bloomFilterService.contains(uid, oid)) {
-            return objectLikedListMap.contains(oid, uid);
+            metricRegistry.counter("is_like.bloom.yes").inc();
+            boolean ret = objectLikedListMap.contains(oid, uid);
+
+            metricRegistry.counter("is_like.map." + (ret ? "yes" : "no")).inc();
+            return ret;
         }
+
+        metricRegistry.counter("is_like.bloom.no").inc();
         return false;
     }
 
     public long count(long oid) {
-        return objectLikedListMap.getCount(oid);
+        long cnt = objectLikedListMap.getCount(oid);
+        metricRegistry.meter("count").mark(cnt);
+        return cnt;
     }
 
     public long[] list(long oid, int pageSize) {
+        metricRegistry.meter("list.pageSize").mark(pageSize);
         return objectLikedListMap.getList(oid, pageSize);
     }
 
     public long[] listFriend(long oid, int pageSize, long uid) {
+        metricRegistry.meter("listFriend.pageSize").mark(pageSize);
+
         long[] friendList = friendListMap.getList(uid);
         if (friendList == null || friendList.length <= 0) {
             return null;
@@ -91,6 +107,9 @@ public class PccService {
         for (long ou : ous) {
             if (friends.contains(ou)) {
                 uids.add(ou);
+            }
+            if (uids.size() >= pageSize) {
+                break;
             }
         }
 

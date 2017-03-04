@@ -1,5 +1,6 @@
 package org.fulin.chestnut;
 
+import com.codahale.metrics.Metric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,8 +8,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
 import java.util.Random;
 
+import static org.fulin.ChestnutApplication.metricRegistry;
 import static org.fulin.chestnut.Response.*;
 
 /**
@@ -33,9 +36,11 @@ public class PccController {
     public Response action(@RequestParam(value = "action") String action,
                            @RequestParam(value = "uid", defaultValue = "0", required = false) long uid,
                            @RequestParam(value = "oid", defaultValue = "0", required = false) long oid,
-                           @RequestParam(value = "page_size", defaultValue = "10", required = false) int pageSize,
+                           @RequestParam(value = "page_size", defaultValue = "20", required = false) int pageSize,
                            @RequestParam(value = "is_friend", defaultValue = "0", required = false) int isFriend) {
         try {
+
+            metricRegistry.counter("action." + action).inc();
 
             if (action.toLowerCase().startsWith("press")) {
                 if (action.equalsIgnoreCase("press")) {
@@ -70,9 +75,14 @@ public class PccController {
                 }
             }
 
+            metricRegistry.counter("error.client").inc();
+
             return CLIENT_ERROR_RESPONSE;
         } catch (Exception e) {
             logger.error("error for action {}", action, e);
+
+            metricRegistry.counter("error.server").inc();
+
             return SERVER_ERROR_RESPONSE;
         }
     }
@@ -82,6 +92,8 @@ public class PccController {
     @RequestMapping(path = "/pcc/like")
     public Response<long[]> like(long uid, long oid) {
         if (pccService.isLike(uid, oid)) {
+            metricRegistry.counter("error.already_like").inc();
+
             return ALREADY_LIKE_ERROR_RESPONSE;
         }
         return Response.of("like", uid, oid, pccService.like(uid, oid));
@@ -107,5 +119,13 @@ public class PccController {
     @RequestMapping(path = "/pcc/list_friend")
     public Response<long[]> listFriend(long oid, int pageSize, long uid) {
         return Response.of("list_friend", uid, oid, pccService.listFriend(oid, pageSize, uid));
+    }
+
+    @RequestMapping(path = "/stat")
+    public String stat() {
+        Map<String, Metric> metricMap =  metricRegistry.getMetrics();
+        StringBuilder sb = new StringBuilder();
+
+        return sb.toString();
     }
 }

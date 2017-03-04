@@ -2,6 +2,19 @@ package org.fulin.chestnut;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.fulin.ChestnutApplication.DATA_PATH;
 
 /**
  * chestnut
@@ -11,10 +24,34 @@ import com.google.common.hash.Funnels;
  */
 public class BloomFilterService {
 
-    private BloomFilter<String> bloomFilter;
+    private Logger logger = LoggerFactory.getLogger(getClass());
 
-    public BloomFilterService(int size) {
-        bloomFilter = BloomFilter.create(Funnels.unencodedCharsFunnel(), size);
+    private BloomFilter<CharSequence> bloomFilter;
+    private String backupFileName = "bloomFilter.data";
+    private AtomicLong updateCount = new AtomicLong(0);
+    private long lastCount = 0;
+    private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+
+    public BloomFilterService(int size) throws IOException {
+        String filename = DATA_PATH + "/" + backupFileName;
+        File f = new File(filename);
+        if (f.exists()) {
+            bloomFilter = BloomFilter.readFrom(new FileInputStream(f), Funnels.unencodedCharsFunnel());
+        } else {
+            bloomFilter = BloomFilter.create(Funnels.unencodedCharsFunnel(), size);
+        }
+
+        executorService.schedule(() -> {
+            if (updateCount.get() - lastCount > 100) {
+                lastCount = updateCount.get();
+                try {
+                    bloomFilter.writeTo(new FileOutputStream(f));
+                    logger.info("succ backup bloom filter to file {} with size {}", filename, size);
+                } catch (Exception e) {
+                    logger.error("backup bloom filter error", e);
+                }
+            }
+        }, 60, TimeUnit.SECONDS);
     }
 
     public boolean add(long key, long value) {
@@ -24,6 +61,8 @@ public class BloomFilterService {
             throw new IllegalArgumentException("key and value must be positive");
         }
 
+        updateCount.incrementAndGet();
+        
         String str = key + "." + value;
         return bloomFilter.put(str);
     }
