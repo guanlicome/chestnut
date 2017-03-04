@@ -92,7 +92,7 @@ public class PccService {
         objectLikedListMap.close();
         nicknames.close();
         bloomFilterService.close();
-        long cost = System.currentTimeMillis();
+        long cost = System.currentTimeMillis() - start;
         System.out.println("Succ closed all maps, cost time " + cost);
     }
 
