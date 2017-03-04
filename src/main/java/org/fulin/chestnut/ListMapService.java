@@ -46,7 +46,7 @@ public class ListMapService {
         logger.info("chronicle map {} put data in dir: {}", listName, DATA_PATH);
         logger.info("chronicle map {} with config: small {}/{}, media {}/{}, large {}/{}",
                 listName, smallEntriesSize, smallValueLength,
-                mediaEntriesSize, medianValueLength, largeEntriesSize, largeEntriesSize);
+                mediaEntriesSize, medianValueLength, largeEntriesSize, largeValueLength);
 
         smallListMap = ChronicleMap
                 .of(Long.class, long[].class)
