@@ -68,8 +68,8 @@ public class PccService {
 
             objectLikedListMap = new ListMapService("objectLikedList",
                     (int) (TOTAL_OBJECT_CNT * 0.9), (int) (AVG_OBJECT_LIKED_CNT * 0.5),
-                    (int) (TOTAL_OBJECT_CNT * 0.09), AVG_OBJECT_LIKED_CNT,
-                    (int) (TOTAL_OBJECT_CNT * 0.02), AVG_OBJECT_LIKED_CNT * 2);
+                    (int) (TOTAL_OBJECT_CNT * 0.09), AVG_OBJECT_LIKED_CNT * 2,
+                    (int) (TOTAL_OBJECT_CNT * 0.02), AVG_OBJECT_LIKED_CNT * 20);
 
             nicknames = ChronicleMap
                     .of(Long.class, String.class)
