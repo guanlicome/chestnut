@@ -1,13 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="INFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>./info.log</file>
+
+    <property name="log.home" value="${log.home}"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.home}/console.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log.home}/archives/stdout.%d{yyyy-MM-dd}.log
+            </fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS}|%logger{1}|%msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS}|%level|%logger{1}|%X{traceId}|%msg%n</pattern>
         </encoder>
     </appender>
 
+    <appender name="SERVER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.home}/server.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log.home}/archives/server.%d{yyyy-MM-dd}.log
+            </fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS}|%level|%logger{1}|%X{traceId}|%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.springframework.boot.autoconfigure.logging" level="info" additivity="false"/>
+    <logger name="org.springframework.web.servlet.handler" level="info" additivity="false"/>
+
+    <logger name="org.fulin" level="INFO" additivity="false">
+        <appender-ref ref="SERVER"/>
+    </logger>
+
+
     <root level="INFO">
-        <appender-ref ref="INFO" />
+        <appender-ref ref="CONSOLE"/>
     </root>
 </configuration>
