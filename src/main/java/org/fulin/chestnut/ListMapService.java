@@ -102,7 +102,7 @@ public class ListMapService {
         largeListMap.put(key, values);
         metricRegistry.counter("listMap.large.addMulti").inc();
         logger.info("addMulti to large for key {}, size: {}", key, values.length);
-        setCount(key, values.length);
+        setCount(key, values.length, false);
 
         return true;
     }
@@ -185,7 +185,7 @@ public class ListMapService {
             throw new IllegalStateException("unknown state");
         }
 
-        setCount(key, (long) (len + 1));
+        setCount(key, (long) (len + 1), true);
 
         return true;
     }
@@ -201,24 +201,24 @@ public class ListMapService {
         return v.intValue();
     }
 
-    private void setCount(long key, long value) {
+    private void setCount(long key, long value, boolean isAdd) {
         countMap.put(key, value);
 
-        if (value == 1000_000L) {
+        if ((isAdd && value == 1000_000L) || (!isAdd && value >= 1000_000L)) {
             metricRegistry.counter(listName + ".count.1m").inc();
-        } else if (value == 100_000L) {
+        } else if ((isAdd && value == 100_000L) || (!isAdd && value >= 100_000L)) {
             metricRegistry.counter(listName + ".count.100k").inc();
-        } else if (value == 10_000L) {
+        } else if ((isAdd && value == 10_000L) || (!isAdd && value >= 10_000L)) {
             metricRegistry.counter(listName + ".count.10k").inc();
-        } else if (value == 1000) {
+        } else if ((isAdd && value == 1000L) || (!isAdd && value >= 1000L)) {
             metricRegistry.counter(listName + ".count.1000").inc();
-        } else if (value == 100) {
+        } else if ((isAdd && value == 100L) || (!isAdd && value >= 100L)) {
             metricRegistry.counter(listName + ".count.100").inc();
-        } else if (value == 80) {
+        } else if ((isAdd && value == 80L) || (!isAdd && value >= 80L)) {
             metricRegistry.counter(listName + ".count.80").inc();
-        } else if (value == 40) {
+        } else if ((isAdd && value == 40L) || (!isAdd && value >= 40L)) {
             metricRegistry.counter(listName + ".count.40").inc();
-        } else if (value == 20) {
+        } else if ((isAdd && value == 20L) || (!isAdd && value >= 20L)) {
             metricRegistry.counter(listName + ".count.20").inc();
         }
     }
