@@ -44,6 +44,27 @@ public class ChestnutApplicationTests {
     }
 
     @Test
+    public void press() {
+        press(100, null);
+        press(200, "like");
+    }
+
+    public void press(long times, String action) {
+        long begin = System.currentTimeMillis();
+        String url = "/pcc?action=press";
+        if (action != null && action.length() > 0) {
+            url = url + "_" + action;
+        }
+        for (long i = 0; i < times; i++) {
+            restTemplate.getForObject(url, String.class);
+
+        }
+        long cost = System.currentTimeMillis() - begin;
+        System.out.println("action:" + action + ", press " + times + " times, " +
+                "cost time: " + cost);
+    }
+
+    @Test
     public void loadLikeData() {
         long begin = System.currentTimeMillis();
         for (long uid = 20001; uid < 20010; uid++) {

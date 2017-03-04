@@ -37,13 +37,17 @@ public class PccController {
                            @RequestParam(value = "is_friend", defaultValue = "0", required = false) int isFriend) {
         try {
 
-            if (action.equalsIgnoreCase("press")) {
-                int p = random.nextInt() % actions.length;
-                action = actions[p];
-                uid = random.nextInt() % 10000000;
-                oid = random.nextInt() % 10000000;
-                pageSize = random.nextInt() % 20;
-                isFriend = random.nextInt() % 2;
+            if (action.toLowerCase().startsWith("press")) {
+                if (action.equalsIgnoreCase("press")) {
+                    int p = Math.abs(random.nextInt()) % actions.length;
+                    action = actions[p];
+                } else {
+                    action = action.substring("press_".length());
+                }
+                uid = Math.abs(random.nextInt()) % 10000000;
+                oid = Math.abs(random.nextInt()) % 10000000;
+                pageSize = Math.abs(random.nextInt()) % 20;
+                isFriend = Math.abs(random.nextInt()) % 2;
             }
 
             if (action.equalsIgnoreCase("like")) {
