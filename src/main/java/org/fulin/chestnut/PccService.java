@@ -86,12 +86,14 @@ public class PccService {
 
     @PreDestroy
     public void close() {
+        long start = System.currentTimeMillis();
         friendListMap.close();
         userLikeListMap.close();
         objectLikedListMap.close();
         nicknames.close();
         bloomFilterService.close();
-        System.out.println("Succ closed all maps");
+        long cost = System.currentTimeMillis();
+        System.out.println("Succ closed all maps, cost time " + cost);
     }
 
     public static void prepareForTest() throws IOException {

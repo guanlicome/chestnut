@@ -15,16 +15,35 @@ import java.io.IOException;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ChestnutApplicationTests {
 
+    static {
+        try {
+            PccService.prepareForTest();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @Autowired
     private TestRestTemplate restTemplate;
 
     @Before
     public void cleanOldData() throws IOException {
-        PccService.prepareForTest();
+
+    }
+
+    //@Test
+    public void contextLoads() {
     }
 
     @Test
-    public void contextLoads() {
+    public void testUser() {
+        String ret = restTemplate.getForObject("/pcc/add_user?uid=20001&nickname=tangfl", String.class);
+        ret = restTemplate.getForObject("/pcc/add_user?uid=20002&nickname=tim", String.class);
+        ret = restTemplate.getForObject("/pcc/add_user?uid=20003&nickname=wang", String.class);
+        System.out.println("add_user: " + ret);
+        ret = restTemplate.getForObject("/pcc/add_friend?uid=20001&friend_uid=20002", String.class);
+        ret = restTemplate.getForObject("/pcc/add_friend?uid=20001&friend_uid=20003", String.class);
+        System.out.println("add_friend: " + ret);
     }
 
     @Test
@@ -44,12 +63,12 @@ public class ChestnutApplicationTests {
     }
 
     @Test
-    public void press() {
-        press(100, null);
-        press(200, "like");
+    public void pressLike() {
+        pressLike(100, null);
+        pressLike(200, "like");
     }
 
-    public void press(long times, String action) {
+    public void pressLike(long times, String action) {
         long begin = System.currentTimeMillis();
         String url = "/pcc?action=press";
         if (action != null && action.length() > 0) {
@@ -64,7 +83,7 @@ public class ChestnutApplicationTests {
                 "cost time: " + cost);
     }
 
-    @Test
+    //@Test
     public void loadLikeData() {
         long begin = System.currentTimeMillis();
         for (long uid = 20001; uid < 20010; uid++) {
