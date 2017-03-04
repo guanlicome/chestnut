@@ -22,6 +22,8 @@ public class ListMapService {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
 
+    private String listName;
+
     private ChronicleMap<Long, long[]> smallListMap;
     private ChronicleMap<Long, long[]> medianListMap;
     private ChronicleMap<Long, long[]> largeListMap;
@@ -35,6 +37,7 @@ public class ListMapService {
                           long smallEntriesSize, int smallValueLength,
                           long mediaEntriesSize, int medianValueLength,
                           long largeEntriesSize, int largeValueLength) throws IOException {
+        this.listName = listName;
         this.smallThreshold = smallValueLength;
         this.medianThreshold = medianValueLength;
 
@@ -117,6 +120,8 @@ public class ListMapService {
             v = v2;
             v[smallThreshold] = value;
             medianListMap.put(key, v);
+            // TODO performance optimize : do not remove from smallListMap
+            // so get page 1,2,3... of the list will be fast
             smallListMap.remove(key);
             metricRegistry.counter("listMap.small.promote").inc();
             logger.info("promote from small to median for key {}", key);
@@ -142,8 +147,8 @@ public class ListMapService {
             // wtf?
             // TODO log more info
             metricRegistry.counter("listMap.unknown").inc();
-            logger.error("unknown state for key: {}, value len {}, value: {}",
-                    key, len, Arrays.asList(v));
+            logger.error("unknown state of list {}, for key: {}, value len {}, value: {}",
+                    listName, key, len, Arrays.asList(v));
             throw new IllegalStateException("unknown state");
         }
 

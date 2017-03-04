@@ -137,7 +137,8 @@ public class PccService {
     public long[] like(long uid, long oid) {
         metricRegistry.counter("like").inc();
 
-        userLikeListMap.add(uid, oid);
+        //userLikeListMap.add(uid, oid);
+
         objectLikedListMap.add(oid, uid);
         bloomFilterService.add(uid, oid);
 
@@ -164,12 +165,33 @@ public class PccService {
         return cnt;
     }
 
-    public long[] list(long oid, int pageSize) {
+    public long[] list(long oid, int pageSize, long cursor) {
         metricRegistry.meter("list.pageSize").mark(pageSize);
-        return objectLikedListMap.getList(oid, pageSize);
+        if (cursor <= 0) {
+            return objectLikedListMap.getList(oid, pageSize);
+        } else {
+            // TODO optimize
+            long[] all = objectLikedListMap.getList(oid);
+            int pos = 0;
+            while (pos < all.length && all[pos] != cursor) {
+                pos++;
+            }
+            // not found, or cursor is the last one
+            if (pos >= all.length - 1) {
+                return new long[0];
+            }
+
+            int len = pageSize;
+            if (pos + pageSize >= all.length) {
+                len = all.length - pos - 1;
+            }
+            long[] result = new long[len];
+            System.arraycopy(all, pos + 1, result, 0, len);
+            return result;
+        }
     }
 
-    public long[] listFriend(long oid, int pageSize, long uid) {
+    public long[] listFriend(long oid, int pageSize, long uid, long cursor) {
         metricRegistry.meter("listFriend.pageSize").mark(pageSize);
 
         long[] friendList = friendListMap.getList(uid);
@@ -180,9 +202,16 @@ public class PccService {
 
         long[] ous = objectLikedListMap.getList(oid);
         ArrayList<Long> uids = new ArrayList<>();
+        boolean found = false;
 
         for (long ou : ous) {
-            if (friends.contains(ou)) {
+            // loop until we found cursor
+            if (cursor > 0 && !found && ou != cursor) {
+                continue;
+            }
+
+            found = true;
+            if (ou != cursor && friends.contains(ou)) {
                 uids.add(ou);
             }
             if (uids.size() >= pageSize) {
