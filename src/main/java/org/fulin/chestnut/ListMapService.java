@@ -180,20 +180,22 @@ public class ListMapService {
     private void setCount(long key, long value) {
         countMap.put(key, value);
 
-        if (value > 100000) {
-            metricRegistry.counter(listName + ".count.>100k").inc();
-        } else if (value > 10000) {
-            metricRegistry.counter(listName + ".count.>10k").inc();
-        } else if (value > 1000) {
-            metricRegistry.counter(listName + ".count.>1000").inc();
-        } else if (value > 100) {
-            metricRegistry.counter(listName + ".count.>100").inc();
-        } else if (value > 80) {
-            metricRegistry.counter(listName + ".count.>80").inc();
-        } else if (value > 40) {
-            metricRegistry.counter(listName + ".count.>40").inc();
-        } else if (value > 20) {
-            metricRegistry.counter(listName + ".count.>20").inc();
+        if (value == 1000_000L) {
+            metricRegistry.counter(listName + ".count.1m").inc();
+        } else if (value == 100_000L) {
+            metricRegistry.counter(listName + ".count.100k").inc();
+        } else if (value == 10_000L) {
+            metricRegistry.counter(listName + ".count.10k").inc();
+        } else if (value == 1000) {
+            metricRegistry.counter(listName + ".count.1000").inc();
+        } else if (value == 100) {
+            metricRegistry.counter(listName + ".count.100").inc();
+        } else if (value == 80) {
+            metricRegistry.counter(listName + ".count.80").inc();
+        } else if (value == 40) {
+            metricRegistry.counter(listName + ".count.40").inc();
+        } else if (value == 20) {
+            metricRegistry.counter(listName + ".count.20").inc();
         }
     }
 
