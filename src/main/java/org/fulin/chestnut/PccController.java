@@ -1,6 +1,6 @@
 package org.fulin.chestnut;
 
-import com.codahale.metrics.Metric;
+import com.codahale.metrics.annotation.Timed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
 import java.util.Random;
 
 import static org.fulin.ChestnutApplication.metricRegistry;
@@ -89,6 +88,7 @@ public class PccController {
 
     // return the oid 's liked uid list
     // return error for uid already like oid
+    @Timed
     @RequestMapping(path = "/pcc/like")
     public Response<long[]> like(long uid, long oid) {
         if (pccService.isLike(uid, oid)) {
@@ -100,6 +100,7 @@ public class PccController {
     }
 
     // 1 for like, 0 for not
+    @Timed
     @RequestMapping(path = "/pcc/is_like")
     public Response<Integer> isLike(long uid, long oid) {
         int result = pccService.isLike(uid, oid) ? 1 : 0;
@@ -107,25 +108,21 @@ public class PccController {
     }
 
     @RequestMapping(path = "/pcc/count")
+    @Timed
     public Response<Long> count(long oid) {
         return Response.of("count", 0, oid, pccService.count(oid));
     }
 
     @RequestMapping(path = "/pcc/list")
+    @Timed
     public Response<long[]> list(long oid, int pageSize) {
         return Response.of("list", 0, oid, pccService.list(oid, pageSize));
     }
 
     @RequestMapping(path = "/pcc/list_friend")
+    @Timed
     public Response<long[]> listFriend(long oid, int pageSize, long uid) {
         return Response.of("list_friend", uid, oid, pccService.listFriend(oid, pageSize, uid));
     }
-
-    @RequestMapping(path = "/stat")
-    public String stat() {
-        Map<String, Metric> metricMap =  metricRegistry.getMetrics();
-        StringBuilder sb = new StringBuilder();
-
-        return sb.toString();
-    }
+    
 }
